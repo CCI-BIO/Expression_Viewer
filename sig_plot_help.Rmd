@@ -2,34 +2,39 @@
 title: "signature_plot_help"
 output: html_document
 ---
-### SIGNATURE PLOT
 
 ```{r include = FALSE}
 library(knitr)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+### Signature plot
 
-```{r out.width = "50%", fig.align='center', echo=FALSE}
-include_graphics("Instruction_images/sig_plot.png")
+The signature plot module allows the user to generate a gene signature TPM plot. This plot highlights a specific sample's TPM values for a given set of genes (signature) with comparisons against the full cohort (mean and median TPM).
+
+The module requires the user to upload 3 files:
+
+```{r out.width = "75%", fig.align='center', echo=FALSE}
+include_graphics("Instruction_images/sig_plot_1.jpg")
 ```
 
-The three files required to plot the gene signature expressions are : 
+* **1. TPM count table.**
 
-**1. Gene expression TPM counts.**
+* **2. Sample metadata file.**
 
-**2. Patient diagnosis file.**
-
-**3. Text file containing the signature gene sets.** 
+* **3. Text file containing the gene signature.** 
 
 ```{r echo=FALSE}
 ex_gene_sig <- read.delim("Example_files/example_signatures.txt", header=T, sep="\t")
 ex_gene_sig[1:5,]
 ```
 
+User defined signature files can be created similar to the one provided above. 
 
-User define signature files can be created similar to the one provided above. 
+The specified sample to show in the gene signature TPM plot can be selected using the 'Select sample ID:' drop down list. 
 
-Drop down menu is provided to select the interested patient ID (see above image (4.)). 
+```{r out.width = "75%", fig.align='center', echo=FALSE}
+include_graphics("Instruction_images/sig_plot_2.jpg")
+```
 
-Resulting plot can be **downloaded** as a png file using the download button at the bottom left corner. 
+The final signature plot can be downloaded using the download button located at the bottom of the page. 
