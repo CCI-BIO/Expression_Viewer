@@ -2,7 +2,7 @@
 ## 
 ## Created by the CCI Bioinformatics team (Nisitha Jayatilleke, Pooja Venkat and Chelsea Mayoh)
 ## Date: 15/07/2019
-## Last updated: 15/01/2020
+## Last updated: 05/03/2021
 
 # Import relevant libraries
 library(shiny)
@@ -39,16 +39,19 @@ ui <- fluidPage(
   # Navbar initialisation
   navbarPage(
     id = "tabs", 
-    title = "ZERO Viewer",
+    title = "Expression Viewer",
     ##############################
-    #     Intruction Manual      #
+    #     Instruction Manual      #
     ##############################
     tabPanel(
-      "Help",
-      navbarPage(
-        id = "tabs1",
-        title = "Instruction Manual",
-        theme = "bootsrap.css",
+      #"Help",
+      "Instruction Manual",
+      #navbarPage(
+      #  id = "tabs1",
+      #  title = "Instruction Manual",
+      #  theme = "bootsrap.css",
+      tabsetPanel(
+        type = "tabs",
         tabPanel(
           "Table Statistics",
           includeMarkdown("table_stats_help.md")
