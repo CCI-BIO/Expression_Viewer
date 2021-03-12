@@ -36,7 +36,7 @@ observe({
       tryCatch(
         expr = {
           sampleToView <- input$sampleSelect2
-          if(length(grep(pattern = "P00", x = sampleToView)) > 0){
+          if(length(grep(pattern = "P", x = sampleToView)) > 0){
             sampleToViewNoSecondary <- gsub(pattern = "-.*", replacement = "", x = sampleToView)
           } else {
             sampleToViewNoSecondary <- sampleToView
@@ -197,7 +197,7 @@ observeEvent(
           }
         } else if(input$selectOffline == "online"){
           sampleToView <- input$sampleSelect2
-          if(length(grep(pattern = "P00", x = sampleToView)) > 0){
+          if(length(grep(pattern = "P", x = sampleToView)) > 0){
             sampleToViewNoSecondary <- gsub(pattern = "-.*", replacement = "", x = sampleToView)
           } else {
             sampleToViewNoSecondary <- sampleToView
@@ -235,7 +235,7 @@ output$tablePreview <- renderDT(
         }
         if(input$selectOffline == "online"){
           sampleToView <- input$sampleSelect2
-          if(length(grep(pattern = "P00", x = sampleToView)) > 0){
+          if(length(grep(pattern = "P", x = sampleToView)) > 0){
             sampleToViewNoSecondary <- gsub(pattern = "-.*", replacement = "", x = sampleToView)
           } else {
             sampleToViewNoSecondary <- sampleToView

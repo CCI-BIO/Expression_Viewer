@@ -29,6 +29,7 @@ observeEvent(c(input$Select_plotfile_dot),{
         cncInfo_online<<-read.delim(paste(dirLoc,"Patients_Diagnosis.txt",sep=""),sep="\t",header=F,row.names=1)
         cncInfo_online<<-cncInfo_online[c(1,which(rownames(cncInfo_online) %in% colnames(tpm_online))),]
         cncInfo_1_online<<-read.delim(paste(dirLoc,"Patients_Diagnosis.txt",sep=""),sep="\t",header=T)
+        #cncInfo_1_online<<-cncInfo_1_online[which(cncInfo_1_online$Patient.ID %in% colnames(tpm_online)),]
         cncInfo_1_online<<-cncInfo_1_online[which(cncInfo_1_online[,1] %in% colnames(tpm_online)),]
         
         # Check if file exists
@@ -39,6 +40,7 @@ observeEvent(c(input$Select_plotfile_dot),{
           ##Tried decreasing the number of list here for it to load faster
           genes_list <- tpm_online$gene_id
           updateSelectizeInput(session = session, inputId = "selectgenes2_dot", choices = genes_list, server = T)
+          #patient_id <- cncInfo_1_online$Patient.ID
           patient_id <- cncInfo_1_online[,1]
           updateSelectizeInput(session = session, inputId = "selectPatient_dot", choices = patient_id, server = T )
         }
@@ -56,7 +58,7 @@ observeEvent(c(input$Select_plotfile_dot),{
         #check<<-0
         #UI for file inputs
         output$dotTPM_file <- renderUI({fileInput(inputId = "dotTPMCounts", label = h4("Upload TPM counts file:"))})
-        output$dotPatient_file <- renderUI({fileInput(inputId = "dotPatientmetadata", label = h4("Upload sample metadata file:"))})
+        output$dotPatient_file <- renderUI({fileInput(inputId = "dotPatientmetadata", label = h4("Upload patient diagnosis file:"))})
       }
     },
     error = function(e){
@@ -104,20 +106,23 @@ observeEvent(c(input$Select_plotfile_dot, input$dotTPMCounts, input$dotPatientme
         
         #extract Patient ids
         cncInfo_1_offline<<-read.delim(inFile_dot1$datapath,sep="\t",header=T)
+        #patient_id_offline <- cncInfo_1_offline$Patient.ID
         patient_id_offline <- cncInfo_1_offline[,1]
         
         updateSelectizeInput(session = session,inputId = "selectPatient_dot_offline", choices = patient_id_offline,server=T )
         
       }, 
       error = function(e){
-      # If error in read.table output NULL 
-      return(NULL)
+        # If error in read.table output NULL 
+        return(NULL)
       })
     }
     ##Check if patients IDs correlate in both tpm and patient diagnosis file
     if(!is.null(tpm_offline) & !is.null(cncInfo_offline) & !is.null(cncInfo_1_offline) ){
       cncInfo_offline<<-cncInfo_offline[c(1,which(rownames(cncInfo_offline) %in% colnames(tpm_offline))),]
+      #cncInfo_1_offline<<-cncInfo_1_offline[which(cncInfo_1_offline$Patient.ID %in% colnames(tpm_offline)),]
       cncInfo_1_offline<<-cncInfo_1_offline[which(cncInfo_1_offline[,1] %in% colnames(tpm_offline)),]
+      #patient_id_offline <- cncInfo_1_offline$Patient.ID
       patient_id_offline <- cncInfo_1_offline[,1]
       
       updateSelectizeInput(session = session,inputId = "selectPatient_dot_offline", choices = patient_id_offline,server=T )
@@ -158,6 +163,7 @@ Expression_Dotplot <- function(id, geneList, tpm, cncInfo, cncInfo_1){
     name<-c(rep(gene,ncol(geneInfo)))
     grpdat<-data.frame(TPM=as.numeric(temp),name=name,groups=groups)
     grpdat <- cbind(grpdat, cncInfo_1)
+    #maxVal<-max(geneInfo[1,])
     maxVal<-max(geneInfo[1,])+1
     suppressWarnings({
       if(numCnc == 1){
@@ -170,13 +176,13 @@ Expression_Dotplot <- function(id, geneList, tpm, cncInfo, cncInfo_1){
           labs(y="TPM",x="")
       }else{
         pl<-ggplot(grpdat,aes(name,TPM))+
-        geom_hline(aes(yintercept=median(grpdat$TPM)), size = 0.1)+
-        geom_dotplot(binaxis="y",stackdir="center",aes(fill=groups),binwidth=maxVal/60,dotsize=1.2, width = 0.8, alpha = 0.8)+
-        scale_fill_manual(name="",labels=c("Cohort",as.character(cncType),as.character(id)),values=c("black","green","red"))+
-        theme_classic()+theme(axis.text.x = element_text(size=25),axis.title.y=element_text(size=25))+
-        labs(y="TPM",x="")
+          geom_hline(aes(yintercept=median(grpdat$TPM)), size = 0.1)+
+          geom_dotplot(binaxis="y",stackdir="center",aes(fill=groups),binwidth=maxVal/60,dotsize=1.2, width = 0.8, alpha = 0.8)+
+          scale_fill_manual(name="",labels=c("Cohort",as.character(cncType),as.character(id)),values=c("black","green","red"))+
+          theme_classic()+theme(axis.text.x = element_text(size=25),axis.title.y=element_text(size=25))+
+          labs(y="TPM",x="")
       }
-    filename <- paste("Gene_", gene, "-rnaseq_personalised.png", sep = "")
+      filename <- paste("Gene_", gene, "-rnaseq_personalised.png", sep = "")
     })
     
     #Create download handler
@@ -218,7 +224,8 @@ Expression_Dotplot <- function(id, geneList, tpm, cncInfo, cncInfo_1){
     gr$colour[gr$groups=="all"] <- "black"
     gr$colour[grep("^z", gr$groups)] <- "red"
     gr$colour[gr$groups!="all" & !(grepl("^z", gr$groups))] <- "green"
-    gr$groups[grep("^z", gr$groups)] <- as.character(gr[grep("^z", gr$groups),1])
+    #gr$groups[grep("^z", gr$groups)] <- as.character(gr$Patient.ID[grep("^z", gr$groups)])
+    gr$groups[grep("^z", gr$groups)] <- as.character(gr[grep("^z", gr$groups),5])
     gr$groups[gr$groups=="all"] <- "Cohort"
     colourGroup <- gr$colour
     names(colourGroup) <- gr$groups
@@ -233,6 +240,7 @@ Expression_Dotplot <- function(id, geneList, tpm, cncInfo, cncInfo_1){
     shapeGroup <- gr$shape
     names(shapeGroup) <- gr$groups
     
+    #print(head(gr))
     #p <- "ggplot(data=gr, aes(name, mid, colour=groups, Patient_Id= Patient.ID, TPM =TPM, Diagnosis =Diagnosis, size=groups, shape=groups))+ geom_hline(aes(yintercept=median(gr$TPM)))+labs(y='TPM',x='')+scale_size_manual(values=c(2,3,4), name='', labels=c(as.character(q),as.character(cncType),as.character(id)))+scale_shape_manual(name='', labels=c(as.character(q),as.character(cncType),as.character(id)), values=c(16,17,15))+scale_colour_manual(name='',labels=c('Cohort',as.character(cncType),id),values=c('black','green','red'))"
     p <- "ggplot(data=gr, aes(name, mid, colour=groups, Patient_Id=Patient.ID, TPM=TPM, Diagnosis=Diagnosis, size=groups, shape=groups))+ geom_hline(aes(yintercept=median(gr$TPM)))+labs(y='TPM',x='')+scale_colour_manual(values=colourGroup)+scale_size_manual(values=sizeGroup)+scale_shape_manual(values=shapeGroup)"
     
@@ -284,7 +292,7 @@ observeEvent(c(input$selectgenes2_dot, input$selectPatient_dot,input$Select_plot
 
 #offline plot
 observeEvent(c(input$selectgenes2_dot_offline, input$selectPatient_dot_offline,input$Select_plotfile_dot ),{
-   if (input$Select_plotfile_dot =="offline_plot"){
+  if (input$Select_plotfile_dot =="offline_plot"){
     if(nchar(input$selectgenes2_dot_offline) > 0 & nchar(input$selectPatient_dot_offline) > 0){
       if ((ncol(tpm_offline) - 2) > nrow(cncInfo_1_offline)){
         tpm_offline <<- tpm_offline[,1:(nrow(cncInfo_1_offline)+2)]
