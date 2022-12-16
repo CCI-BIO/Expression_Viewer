@@ -101,19 +101,37 @@ observeEvent(
 
 # Online mode
 observeEvent(
-  c(input$tSNEselectOffline),
+  c(input$tSNEselectOffline, input$selectFolder_tsne),
   {
+    output$tSNEPlot <- renderPlotly({NULL})
     if(input$tSNEselectOffline == "online"){
+      if(input$tSNEselectOffline == "online" & input$selectFolder_tsne == "ExpressionAnalysis"){
+         dirLoc<<-"R:/PM/Work_In_Progress/Molecular_Profiling/RNA_Seq/ExpressionAnalysis/"
+        #dirLoc<<-"R:/KCA/Projects/ZEROApp/updated_gene_expression/"
+      }
+      if(input$tSNEselectOffline == "online" & input$selectFolder_tsne == "totalRNA"){
+        dirLoc<<-"R:/PM/Work_In_Progress/Molecular_Profiling/RNA_Seq/totalRNA/"
+        #dirLoc<<-"R:/KCA/Projects/ZeroApp_multiple/Updated_files/totalRNA/"
+      }
+      if(input$tSNEselectOffline == "online" & input$selectFolder_tsne == "AGRF_trial"){
+         dirLoc<<-"R:/PM/Work_In_Progress/Molecular_Profiling/RNA_Seq/AGRF_Trial/"
+        #dirLoc<<-"R:/KCA/Projects/ZeroApp_multiple/AGRF/"
+      }
       tryCatch(
         expr = {
           # Create variable for tSNE patient metadata
           tSNEpatientMetadata <<- reactive({
             tryCatch(
               expr = {
-                check_tpm <- read.delim(paste(dirLoc, "GeneExpression_TPM_Counts.txt", sep = ""), sep = "\t", header = T, row.names = 1)
+                filename <- list.files(path = dirLoc, pattern = "^Gene[[:print:]]*TPM_Counts.txt$", full.names = T)
+                check_tpm <<- read.delim(filename, sep = "\t", header = T, row.names = 1)
+                
                 colnames(check_tpm) <- gsub(pattern="\\.",replacement="-",colnames(check_tpm))
-                metadata <- read.delim(paste(dirLoc, "Patients_Diagnosis.txt", sep = ""), header = T, stringsAsFactors = F)
+                filename <- list.files(path = dirLoc, pattern = "^Patients_Diagnosis[[:print:]]*.txt", full.names = T)
+                metadata <<- read.delim(filename[1], header = T, stringsAsFactors = F)
+                
                 metadata <- metadata[which(metadata[,1] %in% colnames(check_tpm)),]
+                
                 return(metadata)
               },
               error = function(e){
@@ -125,7 +143,14 @@ observeEvent(
           tSNETPM <<- reactive({
             tryCatch(
               expr = {
-                tpm <- read.delim(paste(dirLoc, "GeneExpression_TPM_Counts.txt", sep = ""), sep = "\t", header = T, row.names = 1)
+                filename <- list.files(path = dirLoc, pattern = "^Gene[[:print:]]*TPM_Counts.txt$", full.names = T)
+                tpm <- read.delim(filename, sep = "\t", header = T, row.names = 1)
+                print("alltime")
+                colnames(tpm) <- gsub(pattern="\\.",replacement="-",colnames(tpm))
+                # check_filename <- list.files(path = dirLoc, pattern = "^Patients_Diagnosis[[:print:]]*.txt", full.names = T)
+                # check_metadata <- read.delim(check_filename[1], header = T, stringsAsFactors = F)
+                # index <- which(colnames(tpm) %in% check_metadata[,1])
+                # tpm <- tpm[,c(1,2,index)]
                 return(tpm)
               },
               error = function(e){
@@ -149,6 +174,7 @@ observeEvent(
   c(input$tSNEselectOffline, input$tSNETPMCounts2, input$tSNEPatientMetadata2),
   {
     if(input$tSNEselectOffline == "offline"){
+      #shinyjs::hide("selectFolder_tsne")
       tSNEpatientMetadata <<- reactive({return(NULL)})
       tSNETPM <<- reactive({return(NULL)})
       inFile1 <- input[["tSNETPMCounts2"]]
@@ -161,6 +187,7 @@ observeEvent(
             # Create variable for tSNE patient tpm counts
             tSNETPM <<- reactive({
               tpm <- read.delim(inFile1$datapath, sep = "\t", header = T, row.names = 1)
+              colnames(tpm) <- gsub(pattern="\\.",replacement="-",colnames(tpm))
               return(tpm)
             })
           },
@@ -178,10 +205,12 @@ observeEvent(
           expr = {
             # Create variable for tSNE patient metadata
             tSNEpatientMetadata <<- reactive({
-              check_tpm <- read.delim(inFile1$datapath, sep = "\t", header = T, row.names = 1)
+              check_tpm <<- read.delim(inFile1$datapath, sep = "\t", header = T, row.names = 1)
               colnames(check_tpm) <- gsub(pattern="\\.",replacement="-",colnames(check_tpm))
-              metadata <- read.delim(inFile2$datapath, header = T, stringsAsFactors = F)
+              metadata <<- read.delim(inFile2$datapath, header = T, stringsAsFactors = F)
               metadata <- metadata[which(metadata[,1] %in% colnames(check_tpm)),]
+              
+              
               return(metadata)
             })
           },
@@ -197,7 +226,7 @@ observeEvent(
 
 # Populate colour selection variables 
 observeEvent(
-  c(input$tSNEselectOffline, input$tSNETPMCounts2, input$tSNEPatientMetadata2),
+  c(input$tSNEselectOffline, input$selectFolder_tsne, input$tSNETPMCounts2, input$tSNEPatientMetadata2),
   {
     tryCatch(
       expr = {
@@ -247,7 +276,7 @@ observeEvent(
 )
 
 observeEvent(
-  c(input$tSNEselectOffline, input$tSNEColourSelect2),
+  c(input$tSNEselectOffline, input$selectFolder_tsne, input$tSNEColourSelect2),
   {
     shinyjs::hide("tSNECategoryColourSelect")
     shinyjs::hide("tSNEColourTable")
@@ -290,7 +319,7 @@ observeEvent(
 
 # Create log table for rtsne 
 observeEvent(
-  c(input$tSNEselectOffline, input$tSNETPMCounts2, input$tSNEPatientMetadata2),
+  c(input$tSNEselectOffline, input$selectFolder_tsne, input$tSNETPMCounts2, input$tSNEPatientMetadata2),
   {
     tryCatch(
       expr = {
@@ -316,7 +345,7 @@ observeEvent(
 )
 
 observeEvent(
-  c(input$tSNEperplexitySelect2),
+  c(input$tSNEperplexitySelect2, input$selectFolder_tsne),
   {
     if(!is.null(tSNETPM()) & !is.null(tSNEpatientMetadata()) & !is.null(input$tSNEperplexitySelect2)){
       tsne <<- NULL
@@ -341,7 +370,7 @@ observeEvent(
 
 # Plot trigger
 observeEvent(
-  c(input$tSNEselectOffline, input$tSNEColourSelect2, input$tSNECategoryColourSelect2, input$tSNEperplexitySelect2, input$tSNEsampleSelect2, input$tSNEColourTable2),
+  c(input$tSNEselectOffline, input$selectFolder_tsne, input$tSNEColourSelect2, input$tSNECategoryColourSelect2, input$tSNEperplexitySelect2, input$tSNEsampleSelect2, input$tSNEColourTable2),
   {
     if(!is.null(tSNETPM()) & !is.null(tSNEpatientMetadata()) & !is.null(input$tSNEperplexitySelect2) & !is.null(tsne) & !is.null(input$tSNECategoryColourSelect2)){
       if(input$tSNEColourSelect2 == "list"){
@@ -374,13 +403,14 @@ observeEvent(
             tryCatch(
               expr = {
                 tsne_points <<- cbind(tsne_points, SampleID = rownames(logTable))
-                m <- match(sampleMetadata[,1], tsne_points$SampleID)
-                tsne_points <<- cbind(tsne_points, sampleMetadata[m,-1])
+                tsne_points <<- merge(x = tsne_points, y = sampleMetadata, by.x = "SampleID", by.y = c(1))
+                #View(sampleMetadata)
+                #print(tsne_points)
                 
                 # Create ggplot string
                 stringToParse <- "ggplot(tsne_points, aes(x = V1, y = V2, SampleID = SampleID"
-                for(i in 1:ncol(sampleMetadata[m,-1])){
-                  stringToParse <- paste(stringToParse, ", ", colnames(sampleMetadata[m,-1])[i], " = ", colnames(sampleMetadata[m,-1])[i], sep = "")
+                for(i in 1:ncol(tsne_points[,-c(1:3)])){
+                  stringToParse <- paste(stringToParse, ", ", colnames(tsne_points[,-c(1:3)])[i], " = ", colnames(tsne_points[,-c(1:3)])[i], sep = "")
                 }
                 stringToParse <- paste(stringToParse, ")) + geom_point(aes(colour = ", categoryToColour, ")) + scale_colour_manual(values = colourVector) + labs(colour = 'Cancer Type') + theme_classic()", sep = "")
                 
@@ -397,7 +427,7 @@ observeEvent(
                 # Create download handler
                 output$tSNEDownload <- downloadHandler(
                   filename = function(){filename},
-                  content = function(file){ggsave(filename = file, plot = p, device = "png", width = 8)}
+                  content = function(file){ggsave(filename = file, plot = p, device = "png", width = 8, height = 8)}
                 )
                 # Enable download button
                 shinyjs::enable("tSNEDownload")
@@ -442,24 +472,28 @@ observeEvent(
               colourVector <- c(colourVector, "#a9a9a9")
               names(colourVector) <- c(unique(colourTable[,2]), "Other")
               
-              print(colourVector)
-              
+              # print(colourVector)
+              # print(colourTable)
+              # 
               tsne_points <<- as.data.frame(tsne$Y)
               
+              print("loading")
               logTable <- tSNETpmObject()
+              print("loaded TPM")
               
               tsne_points <<- cbind(tsne_points, SampleID = rownames(logTable))
-              m <- match(sampleMetadata[,1], tsne_points$SampleID)
-              tsne_points <<- cbind(tsne_points, sampleMetadata[m,-1])
+              tsne_points <<- merge(x = tsne_points, y = sampleMetadata, by.x = "SampleID", by.y = c(1))
               
               tsne_points$Groupings <<- c(rep("Other", nrow(tsne_points))) 
               m1 <- match(colourTable[,1], tsne_points$SampleID)
               tsne_points$Groupings[m1] <<- colourTable[,2]
               
+              #print(tsne_points)
+              
               # Create ggplot string
               stringToParse <- "ggplot(tsne_points, aes(x = V1, y = V2, SampleID = SampleID"
-              for(i in 1:ncol(sampleMetadata[m,-1])){
-                stringToParse <- paste(stringToParse, ", ", colnames(sampleMetadata[m,-1])[i], " = ", colnames(sampleMetadata[m,-1])[i], sep = "")
+              for(i in 1:ncol(tsne_points[,-c(1:3)])){
+                stringToParse <- paste(stringToParse, ", ", colnames(tsne_points[,-c(1:3)])[i], " = ", colnames(tsne_points[,-c(1:3)])[i], sep = "")
               }
               stringToParse <- paste(stringToParse, ")) + geom_point(aes(colour = Groupings)) + scale_colour_manual(values = colourVector) + labs(colour = 'Cancer Type') + theme_classic()", sep = "")
               
@@ -476,7 +510,7 @@ observeEvent(
               # Create download handler
               output$tSNEDownload <- downloadHandler(
                 filename = function(){filename},
-                content = function(file){ggsave(filename = file, plot = p, device = "png", width = 8)}
+                content = function(file){ggsave(filename = file, plot = p, device = "png", width = 8, height = 8)}
               )
               # Enable download button
               shinyjs::enable("tSNEDownload")

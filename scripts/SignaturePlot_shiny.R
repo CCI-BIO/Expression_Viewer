@@ -92,17 +92,32 @@ observeEvent(
 
 # Online mode
 observeEvent(
-  c(input$SigPlotSelectOffline),
+  c(input$SigPlotSelectOffline, input$selectFolder_sigplot),
   {
+    output$SigPlot <- renderPlotly({NULL})
     if(input$SigPlotSelectOffline == "online"){
+      if(input$tSNEselectOffline == "online" & input$selectFolder_sigplot == "ExpressionAnalysis"){
+         dirLoc<<-"R:/PM/Work_In_Progress/Molecular_Profiling/RNA_Seq/ExpressionAnalysis/"
+        #dirLoc<<-"R:/KCA/Projects/ZEROApp/updated_gene_expression/"
+      }
+      if(input$tSNEselectOffline == "online" & input$selectFolder_sigplot == "totalRNA"){
+         dirLoc<<-"R:/PM/Work_In_Progress/Molecular_Profiling/RNA_Seq/totalRNA/"
+        #dirLoc<<-"R:/KCA/Projects/ZEROApp/totalRNA/"
+      }
+      if(input$tSNEselectOffline == "online" & input$selectFolder_sigplot == "AGRF_trial"){
+         dirLoc<<-"R:/PM/Work_In_Progress/Molecular_Profiling/RNA_Seq/AGRF_Trial/"
+        #dirLoc<<-"R:/KCA/Projects/ZeroApp_multiple/AGRF/"
+      }
       tryCatch(
         expr = {
           # Create variable for signature plot patient metadata
           shinyjs::disable("SigPlotSelectOffline")
           SigPlotPatientMetadata <<- reactive({
-            check_tpm <- read.delim(paste(dirLoc, "GeneExpression_TPM_Counts.txt", sep = ""), sep = "\t", header = T, row.names = 1)
+            filename <- list.files(path = dirLoc, pattern = "^Gene[[:print:]]*TPM_Counts.txt$", full.names = T)
+            check_tpm <- read.delim(filename, sep = "\t", header = T, row.names = 1)
             colnames(check_tpm) <- gsub(pattern="\\.",replacement="-",colnames(check_tpm))
-            metadata <- read.delim(paste(dirLoc, "Patients_Diagnosis.txt", sep = ""), header = T, stringsAsFactors = F)
+            filename <- list.files(path = dirLoc, pattern = "^Patients_Diagnosis[[:print:]]*.txt", full.names = T)
+            metadata <- read.delim(filename[1], header = T, stringsAsFactors = F)
             metadata <- metadata[which(metadata[,1] %in% colnames(check_tpm)),]
             # if(nrow(metadata) > (ncol(check_tpm)-1)){
             #   metadata <- metadata[1:(ncol(check_tpm)-1),]
@@ -111,7 +126,8 @@ observeEvent(
           })
           # Create variable for signature plot patient tpm counts
           SigPlotTPM <<- reactive({
-            tpm <- read.delim(paste(dirLoc, "GeneExpression_TPM_Counts.txt", sep = ""), sep = "\t", header = T, row.names = 1)
+            filename <- list.files(path = dirLoc, pattern = "^Gene[[:print:]]*TPM_Counts.txt$", full.names = T)
+            tpm <- read.delim(filename, sep = "\t", header = T, row.names = 1)
             return(tpm)
           })
           # Create variable for signature genes 
@@ -137,6 +153,7 @@ observeEvent(
   c(input$SigPlotSelectOffline, input$SigPlotTPMCounts2, input$SigPlotPatientMetadata2, input$SigPlotSignatureGenes2),
   {
     if(input$SigPlotSelectOffline == "offline"){
+      shinyjs::hide("selectFolder_sigplot")
       SigPlotPatientMetadata <<- reactive({return(NULL)})
       SigPlotTPM <<- reactive({return(NULL)})
       SigPlotSignatureGenes <<- reactive({return(NULL)})
@@ -204,7 +221,7 @@ observeEvent(
 
 # Plot online trigger
 observeEvent(
-  c(input$SigPlotSelectOffline, input$SigPlotSignatureFile2),
+  c(input$SigPlotSelectOffline, input$selectFolder_sigplot, input$SigPlotSignatureFile2),
   {
     tryCatch(
       expr = {

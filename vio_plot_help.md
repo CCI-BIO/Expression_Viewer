@@ -3,10 +3,7 @@ title: "vio_plot_help"
 output: html_document
 ---
 
-```{r include = FALSE}
-library(knitr)
-knitr::opts_chunk$set(echo = TRUE)
-```
+
 
 ### Violin plot
 
@@ -18,16 +15,12 @@ The module requires the user to upload 2 files:
 
 * **2. Sample metadata file.**
 
-```{r out.width = "75%", fig.align='center', echo=FALSE}
-include_graphics("Instruction_images/vio_plot_1.jpg")
-```
+<img src="Instruction_images/vio_plot_1.jpg" alt="plot of chunk unnamed-chunk-2" width="75%" style="display: block; margin: auto;" />
 
 The module provides the option to select any gene that is present in the TPM counts file. Furthermore, the TPM values represented in the plot can be converted to log-TPM if required. 
 
 Metadata categories can be selected from the drop down list and the constructed plot will be stratified accordingly. If necessary specific metadata groups within a category can be filtered out. 
 
-```{r out.width = "75%", fig.align='center', echo=FALSE}
-include_graphics("Instruction_images/vio_plot_2.jpg")
-```
+<img src="Instruction_images/vio_plot_2.jpg" alt="plot of chunk unnamed-chunk-3" width="75%" style="display: block; margin: auto;" />
 
 The final violin plot can then be downloaded using the download button below the interactive plot. 

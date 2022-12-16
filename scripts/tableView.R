@@ -6,14 +6,29 @@
 ## Last updated: 12/03/2021
 
 # Online or Offline mode
-observe({
+observeEvent(
+  c(input$selectOffline, input$selectFolder_tableView),
+  {
   # Online mode
   if(input$selectOffline == "online"){
+    if(input$selectOffline == "online" & input$selectFolder_tableView == "ExpressionAnalysis"){
+      dirLoc<<-"R:/PM/Work_In_Progress/Molecular_Profiling/RNA_Seq/ExpressionAnalysis/"
+      #dirLoc<<-"R:/KCA/Projects/ZEROApp/updated_gene_expression/"
+    }
+    if(input$selectOffline == "online" & input$selectFolder_tableView == "totalRNA"){
+      dirLoc<<-"R:/PM/Work_In_Progress/Molecular_Profiling/RNA_Seq/totalRNA/"
+      #dirLoc<<-"R:/KCA/Projects/ZEROApp/totalRNA/"
+    }
+    if(input$selectOffline == "online" & input$selectFolder_tableView == "AGRF_trial"){
+      dirLoc<<-"R:/PM/Work_In_Progress/Molecular_Profiling/RNA_Seq/AGRF_Trial/"
+      #dirLoc<<-"R:/KCA/Projects/ZeroApp_multiple/AGRF/"
+    }
     # Select sample for table view
     output$sampleSelect <- renderUI({
       tryCatch(
         expr = {
-          patientMetadata <- read.delim(paste(dirLoc, "Patients_Diagnosis.txt", sep = ""), header = T, stringsAsFactors = F)
+          filename <- list.files(path = dirLoc, pattern = "^Patients_Diagnosis[[:print:]]*.txt", full.names = T)
+          patientMetadata <- read.delim(filename[1], header = T, stringsAsFactors = F)
           print(patientMetadata)
           sampleSelectList <- patientMetadata[,1]
           names(sampleSelectList) <- sampleSelectList
@@ -37,10 +52,16 @@ observe({
         expr = {
           sampleToView <- input$sampleSelect2
           if(length(grep(pattern = "P", x = sampleToView)) > 0){
-            sampleToViewNoSecondary <- gsub(pattern = "-.*", replacement = "", x = sampleToView)
+            if(input$selectFolder_tableView == "ExpressionAnalysis"){
+              sampleToViewNoSecondary <- gsub(pattern = "-.*", replacement = "", x = sampleToView)
+            } else if(input$selectFolder_tableView != "ExpressionAnalysis"){
+              sampleToViewNoSecondary <- sampleToView
+            }
           } else {
             sampleToViewNoSecondary <- sampleToView
           }
+          print(sampleToViewNoSecondary)
+          
           fileList <- list.files(path = paste(dirLoc, sampleToViewNoSecondary, "/", sep = ""), full.names = F)
           fileList <- fileList[grep(pattern = "-FC", x = fileList)]  # Remove extra - after FC
           selectizeInput(
@@ -110,10 +131,12 @@ output$selectGenes <- renderUI({
 
 # Select groupings 
 observeEvent(
-  c(input$selectOffline, input$sampleSelect2, input$tableSelect2, input$selectGeneInput, input$patientMetadata2, input$TPMcounts2),
+  c(input$selectOffline, input$selectFolder_tableView, input$sampleSelect2, input$tableSelect2, input$selectGeneInput, input$patientMetadata2, input$TPMcounts2),
   {
     tryCatch(
       expr = {
+        print("test")
+        print(input$selectOffline)
         if(input$selectOffline == "offline"){
           inFile2 <- input[["patientMetadata2"]]
           if(is.null(inFile2)){
@@ -122,7 +145,10 @@ observeEvent(
             patientMetadata <- read.delim(inFile2$datapath, header = T, stringsAsFactors = F)
           }
         } else if(input$selectOffline == "online"){
-          patientMetadata <- read.delim(paste(dirLoc, "/Patients_Diagnosis.txt", sep = ""), header = T, stringsAsFactors = F)
+          print(dirLoc)
+          filename <- list.files(path = dirLoc, pattern = "^Patients_Diagnosis[[:print:]]*.txt", full.names = T)
+          print(filename)
+          patientMetadata <- read.delim(filename[1], header = T, stringsAsFactors = F)
         }
         output$categoryChoice <- renderUI({
           selectInput(
@@ -142,7 +168,7 @@ observeEvent(
 
 # Select specific groups to summarise
 observeEvent(
-  c(input$categoryChoice2),
+  c(input$categoryChoice2, input$selectFolder_tableView),
   {
     tryCatch(
       expr = {
@@ -155,7 +181,8 @@ observeEvent(
               patientMetadata <- read.delim(inFile2$datapath, header = T, stringsAsFactors = F)
             }
           } else if(input$selectOffline == "online"){
-            patientMetadata <- read.delim(paste(dirLoc, "/Patients_Diagnosis.txt", sep = ""), header = T, stringsAsFactors = F)
+            filename <- list.files(path = dirLoc, pattern = "^Patients_Diagnosis[[:print:]]*.txt", full.names = T)
+            patientMetadata <- read.delim(filename[1], header = T, stringsAsFactors = F)
           }
           output$histologySelect <- renderUI({
             selectInput(
@@ -176,7 +203,7 @@ observeEvent(
 
 # Server side selectize input for genes
 observeEvent(
-  c(input$selectOffline, input$sampleSelect2, input$tableSelect2, input$selectGeneInput, input$patientMetadata2, input$TPMcounts2),
+  c(input$selectOffline, input$selectFolder_tableView, input$sampleSelect2, input$tableSelect2, input$selectGeneInput, input$patientMetadata2, input$TPMcounts2),
   {
     tryCatch(
       expr = {
@@ -198,7 +225,11 @@ observeEvent(
         } else if(input$selectOffline == "online"){
           sampleToView <- input$sampleSelect2
           if(length(grep(pattern = "P", x = sampleToView)) > 0){
-            sampleToViewNoSecondary <- gsub(pattern = "-.*", replacement = "", x = sampleToView)
+            if(input$selectFolder_tableView == "ExpressionAnalysis"){
+              sampleToViewNoSecondary <- gsub(pattern = "-.*", replacement = "", x = sampleToView)
+            } else if(input$selectFolder_tableView != "ExpressionAnalysis"){
+              sampleToViewNoSecondary <- sampleToView
+            }
           } else {
             sampleToViewNoSecondary <- sampleToView
           }
@@ -236,7 +267,11 @@ output$tablePreview <- renderDT(
         if(input$selectOffline == "online"){
           sampleToView <- input$sampleSelect2
           if(length(grep(pattern = "P", x = sampleToView)) > 0){
-            sampleToViewNoSecondary <- gsub(pattern = "-.*", replacement = "", x = sampleToView)
+            if(input$selectFolder_tableView == "ExpressionAnalysis"){
+              sampleToViewNoSecondary <- gsub(pattern = "-.*", replacement = "", x = sampleToView)
+            } else if(input$selectFolder_tableView != "ExpressionAnalysis"){
+              sampleToViewNoSecondary <- sampleToView
+            }
           } else {
             sampleToViewNoSecondary <- sampleToView
           }
@@ -273,13 +308,17 @@ output$tablePreview <- renderDT(
               return(NULL)
             } else {
               TPMcounts <- read.delim(inFile3$datapath, header = T, stringsAsFactors = F)
+              colnames(TPMcounts) <- gsub(pattern="\\.",replacement="-",colnames(TPMcounts))
               TPMcounts <- TPMcounts[which(TPMcounts$gene_id %in% tableToView$gene_id),]
               rownames(TPMcounts) <- TPMcounts$gene_id
               TPMcounts <- TPMcounts[,-c(1:2)]
             }
           } else if(input$selectOffline == "online"){
-            patientMetadata <- read.delim(paste(dirLoc, "/Patients_Diagnosis.txt", sep = ""), header = T, stringsAsFactors = F)
-            TPMcounts <- read.delim(paste(dirLoc, "/GeneExpression_TPM_Counts.txt", sep = ""), header = T, stringsAsFactors = F)
+            filename <- list.files(path = dirLoc, pattern = "^Patients_Diagnosis[[:print:]]*.txt", full.names = T)
+            patientMetadata <- read.delim(filename[1], header = T, stringsAsFactors = F)
+            filename2 <- list.files(path = dirLoc, pattern = "^Gene[[:print:]]*TPM_Counts.txt$", full.names = T)
+            TPMcounts <- read.delim(filename2, header = T, stringsAsFactors = F)
+            colnames(TPMcounts) <- gsub(pattern="\\.",replacement="-",colnames(TPMcounts))
             TPMcounts <- TPMcounts[which(TPMcounts$gene_id %in% tableToView$gene_id),]
             rownames(TPMcounts) <- TPMcounts$gene_id
             TPMcounts <- TPMcounts[,-c(1:2)]
@@ -288,11 +327,13 @@ output$tablePreview <- renderDT(
           for(i in 1:length(selectHist)){
             histToCalc <- selectHist[i]
             patientMetadataSubset <- patientMetadata[which(patientMetadata[,input$categoryChoice2] %in% histToCalc),1]
+            
             TPMcountssubset <- TPMcounts[, which(colnames(TPMcounts) %in% patientMetadataSubset),drop=F]
             TPMmean <- rowMeans(TPMcountssubset)
             TPMmedian <- apply(TPMcountssubset, 1, function(x) median(x))
             TPMStats <- cbind(TPMmean, TPMmedian)
             rownames(TPMStats) <- rownames(TPMcountssubset)
+            
             colnames(TPMStats) <- c(paste(histToCalc, "_MeanTPM", sep = ""), paste(histToCalc, "_MedianTPM", sep = ""))
             tableToView <- merge(x = tableToView, y = TPMStats, by.x = "gene_id", by.y = "row.names")
           }

@@ -55,17 +55,32 @@ observeEvent(
 
 # Online mode
 observeEvent(
-  c(input$VioPlotSelectOffline),
+  c(input$VioPlotSelectOffline, input$selectFolder_vioplot),
   {
+    output$VioPlot <- renderPlotly({NULL})
     if(input$VioPlotSelectOffline == "online"){
+      if(input$tSNEselectOffline == "online" & input$selectFolder_vioplot == "ExpressionAnalysis"){
+         dirLoc<<-"R:/PM/Work_In_Progress/Molecular_Profiling/RNA_Seq/ExpressionAnalysis/"
+        #dirLoc<<-"R:/KCA/Projects/ZEROApp/updated_gene_expression/"
+      }
+      if(input$tSNEselectOffline == "online" & input$selectFolder_vioplot == "totalRNA"){
+         dirLoc<<-"R:/PM/Work_In_Progress/Molecular_Profiling/RNA_Seq/totalRNA/"
+        #dirLoc<<-"R:/KCA/Projects/ZEROApp/totalRNA/"
+      }
+      if(input$tSNEselectOffline == "online" & input$selectFolder_vioplot == "AGRF_trial"){
+         dirLoc<<-"R:/PM/Work_In_Progress/Molecular_Profiling/RNA_Seq/AGRF_Trial/"
+        #dirLoc<<-"R:/KCA/Projects/ZeroApp_multiple/AGRF/"
+      }
       tryCatch(
         expr = {
           # Create variable for violin plot patient metadata
           shinyjs::disable("VioPlotSelectOffline")
           VioPlotPatientMetadata <<- reactive({
-            check_tpm <- read.delim(paste(dirLoc, "GeneExpression_TPM_Counts.txt", sep = ""), sep = "\t", header = T, row.names = 1)
+            filename <- list.files(path = dirLoc, pattern = "^Gene[[:print:]]*TPM_Counts.txt$", full.names = T)
+            check_tpm <- read.delim(filename, sep = "\t", header = T, row.names = 1)
             colnames(check_tpm) <- gsub(pattern="\\.",replacement="-",colnames(check_tpm))
-            metadata <- read.delim(paste(dirLoc, "Patients_Diagnosis.txt", sep = ""), header = T, stringsAsFactors = F)
+            filename <- list.files(path = dirLoc, pattern = "^Patients_Diagnosis[[:print:]]*.txt", full.names = T)
+            metadata <- read.delim(filename[1], header = T, stringsAsFactors = F)
             metadata <- metadata[which(metadata$Patient.ID %in% colnames(check_tpm)),]
             # if(nrow(metadata) > (ncol(check_tpm)-1)){
             #   metadata <- metadata[1:(ncol(check_tpm)-1),]
@@ -74,7 +89,8 @@ observeEvent(
           })
           # Create variable for violin plot patient tpm counts
           VioPlotTPM <<- reactive({
-            tpm <- read.delim(paste(dirLoc, "GeneExpression_TPM_Counts.txt", sep = ""), sep = "\t", header = T, row.names = 1)
+            filename <- list.files(path = dirLoc, pattern = "^Gene[[:print:]]*TPM_Counts.txt$", full.names = T)
+            tpm <- read.delim(filename, sep = "\t", header = T, row.names = 1)
             return(tpm)
           })
         },
@@ -94,6 +110,7 @@ observeEvent(
   c(input$VioPlotSelectOffline, input$VioPlotTPMCounts2, input$VioPlotPatientMetadata2),
   {
     if(input$VioPlotSelectOffline == "offline"){
+      shinyjs::hide("selectFolder_vioplot")
       VioPlotPatientMetadata <<- reactive({return(NULL)})
       VioPlotTPM <<- reactive({return(NULL)})
       inFile1 <- input[["VioPlotTPMCounts2"]]
@@ -143,7 +160,7 @@ observeEvent(
 
 # Populate gene and category selection lists
 observeEvent(
-  c(input$VioPlotSelectOffline, input$VioPlotTPMCounts2, input$VioPlotPatientMetadata2),
+  c(input$VioPlotSelectOffline, input$selectFolder_vioplot, input$VioPlotTPMCounts2, input$VioPlotPatientMetadata2),
   {
     shinyjs::hide("VioPlotGeneSelect")
     shinyjs::hide("VioPlotCategorySelect")
@@ -219,39 +236,47 @@ observeEvent(
 
 # Plot trigger
 observeEvent(
-  c(input$VioPlotSelectOffline, input$VioPlotTPMCounts2, input$VioPlotPatientMetadata2, input$VioPlotGeneSelect, input$VioPlotCategorySelect2, input$VioPlotSelectTPMScale2, input$VioPlotSpecificCategorySelect2),
+  c(input$VioPlotSelectOffline, input$selectFolder_vioplot, input$VioPlotTPMCounts2, input$VioPlotPatientMetadata2, input$VioPlotGeneSelect, input$VioPlotCategorySelect2, input$VioPlotSelectTPMScale2, input$VioPlotSpecificCategorySelect2),
   {
     if(input$VioPlotSelectOffline == "offline" | input$VioPlotSelectOffline == "online"){
       # Construct violin plot with plotly
       output$VioPlot <- renderPlotly({
-        tryCatch(
-        expr = {
+        # tryCatch(
+        # expr = {
             if(!is.null(VioPlotTPM())){
               tpm <- VioPlotTPM()
               geneToTest <- input$VioPlotGeneSelect
               tpmSubset <- tpm[which(rownames(tpm) %in% geneToTest),,drop=F]
-              tpmSubset <- tpmSubset[,-which(colnames(tpmSubset) %in% "transcript_id.s."),drop=F]
+              if("transcript_id.s." %in% colnames(tpmSubset)){
+                tpmSubset <- tpmSubset[,-which(colnames(tpmSubset) %in% "transcript_id.s."),drop=F]
+              }
               metadata <- VioPlotPatientMetadata()
               metadata[,1] <- gsub(pattern = "-", replacement = ".", metadata[,1])
-              
+              print(colnames(metadata))
               # Create data frame
-              df <- matrix(nrow = ncol(tpmSubset), ncol = 3)
-              colnames(df) <- c("sample", "value", "group")
-              
+              df <- matrix(nrow = ncol(tpmSubset), ncol = 2)
+              #colnames(df) <- c("sample", "value", "group")
+              colnames(df) <- c("sample", "value")
               categoryToTest <- input$VioPlotCategorySelect2
               column_idx <- which(colnames(metadata) %in% categoryToTest)
+              print("crash1")
               for(i in 1:ncol(tpmSubset)){
                 df[i,1] <- colnames(tpmSubset)[i]
                 df[i,2] <- tpmSubset[1,i]
-                df[i,3] <- metadata[which(metadata[,1] == colnames(tpmSubset)[i]), column_idx]
+                #df[i,3] <- metadata[which(metadata[,1] == colnames(tpmSubset)[i]), column_idx]
               }
+              df <- merge(df,metadata[,c(1,column_idx)],by.x = "sample", by.y="Patient.ID" )
+              colnames(df)[3] <- "group"
+              print("crash2")
               df <- as.data.frame(df)
               df$sample <- as.character(df$sample)
               df$value <- as.numeric(df$value)
               df$group <- as.character(df$group)
+              print(df)
               
               df <- df[which(df$group %in% input$VioPlotSpecificCategorySelect2),]
-              
+              print("aftersubsetting")
+              print(df)
               if(input$VioPlotSelectTPMScale2 == "tpm"){
                 # Create plot
                 p1 <- ggplot(data = df, mapping = aes(x = group, y = value, fill = group)) + 
@@ -305,11 +330,11 @@ observeEvent(
               ggplotly(p1)
               
             }
-        },
-        error = function(e){
-          return(NULL)
-        }
-        )
+        # },
+        # error = function(e){
+        #   return(NULL)
+        # }
+        # )
       })
     }
   }

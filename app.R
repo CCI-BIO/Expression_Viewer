@@ -90,7 +90,18 @@ ui <- fluidPage(
           radioButtons(
             inputId = "selectOffline",
             label = h4("Select mode:"),
-            choices = list("Online" = "online", "Offline" = "offline")
+            choices = list("Online" = "online", "Offline" = "offline"),
+            selected = "offline"
+          )
+        )
+      ),
+      fluidRow(
+        column(
+          12,
+          radioButtons(
+            inputId = "selectFolder_tableView",
+            label = h4("Select Folder"),
+            choices = list("ExpressionAnalysis" = "ExpressionAnalysis", "totalRNA" = "totalRNA","AGRF_trial" = "AGRF_trial" )
           )
         )
       ),
@@ -186,7 +197,19 @@ ui <- fluidPage(
           radioButtons(
             inputId = "Select_plotfile_dot", 
             label = h4("Select file mode:"),
-            choices = list("Online" = "online_plot", "Offline" = "offline_plot")
+            choices = list("Online" = "online_plot", "Offline" = "offline_plot"),
+            selected = "offline_plot"
+          )
+        )
+      ),
+      fluidRow(
+        column(
+          12,
+          radioButtons(
+            inputId = "selectFolder",
+            label = h4("Select Folder"),
+            choices = list("ExpressionAnalysis" = "ExpressionAnalysis", "totalRNA" = "totalRNA","AGRF_trial" = "AGRF_trial" )
+            
           )
         )
       ),
@@ -219,38 +242,35 @@ ui <- fluidPage(
             multiple = F
           )
         )
-      ),
-      fluidRow(
-        column(
-          6,
-          selectizeInput(
-            inputId = "selectPatient_dot_offline", 
-            label = h4("Select Sample ID:"), 
-            choices = NULL, 
-            multiple = F
-          )
-        ),  
-        column(
-          6,
-          selectizeInput(
-            inputId = "selectgenes2_dot_offline", 
-            label = h4("Select gene to plot:"), 
-            choices = NULL, 
-            multiple = F
-          )
-        )
+      ),fluidRow(
+        tags$style(
+          "#message_2 {font-size:20px;
+            font-weight:bold;
+            font-style:italic;
+            color:Orange}"
+        ),
+        #textOutput("message_1"),
+        #br(),
+        textOutput("message_2"),
+        br()
       ),
       fluidRow(
         column(
           12, 
-          plotlyOutput("plotarea_dot", height = "800px", width = "900px")
+          # plotlyOutput("plotarea_dot", height = "800px", width = "900px")
+          splitLayout(cellWidths = c("50%","50%"),
+                      plotlyOutput("plotarea_dot", height = "800px", width = "700px"),
+                      plotlyOutput("plotarea_dot_cat", height = "800px", width = "700px"))
         )
       ),
       # Download plot button
       fluidRow(
         column(
           12,
-          downloadButton("ExpressionDownload_dot", label = "Download as .png")
+          # downloadButton("ExpressionDownload_dot", label = "Download as .png")
+          splitLayout(cellWidths = c("50%","50%"),
+                      downloadButton("ExpressionDownload_dot", label = "Download as .png"),
+                      downloadButton("ExpressionDownload_dot_cat", label = "Download as .png"))
         )
       )
     ),
@@ -266,7 +286,19 @@ ui <- fluidPage(
           radioButtons(
             inputId = "tSNEselectOffline",
             label = h4("Select mode:"),
-            choices = list("Online" = "online", "Offline" = "offline")
+            choices = list("Online" = "online", "Offline" = "offline"),
+            selected = "offline"
+          )
+        )
+      ),
+      fluidRow(
+        column(
+          12,
+          radioButtons(
+            inputId = "selectFolder_tsne",
+            label = h4("Select Folder"),
+            choices = list("ExpressionAnalysis" = "ExpressionAnalysis", "totalRNA" = "totalRNA","AGRF_trial" = "AGRF_trial" )
+          
           )
         )
       ),
@@ -334,7 +366,18 @@ ui <- fluidPage(
           radioButtons(
             inputId = "SigPlotSelectOffline",
             label = h4("Select mode:"),
-            choices = list("Online" = "online", "Offline" = "offline")
+            choices = list("Online" = "online", "Offline" = "offline"),
+            selected = "offline"
+          )
+        )
+      ),
+      fluidRow(
+        column(
+          12,
+          radioButtons(
+            inputId = "selectFolder_sigplot",
+            label = h4("Select Folder"),
+            choices = list("ExpressionAnalysis" = "ExpressionAnalysis", "totalRNA" = "totalRNA","AGRF_trial" = "AGRF_trial" )
           )
         )
       ),
@@ -391,7 +434,20 @@ ui <- fluidPage(
           radioButtons(
             inputId = "VioPlotSelectOffline",
             label = h4("Select mode:"),
-            choices = list("Online" = "online", "Offline" = "offline")
+            choices = list("Online" = "online", "Offline" = "offline"),
+            selected = "offline"
+           
+          )
+        )
+      ),
+      fluidRow(
+        column(
+          12,
+          radioButtons(
+            inputId = "selectFolder_vioplot",
+            label = h4("Select Folder"),
+            choices = list("ExpressionAnalysis" = "ExpressionAnalysis", "totalRNA" = "totalRNA","AGRF_trial" = "AGRF_trial" )
+            
           )
         )
       ),
@@ -457,7 +513,18 @@ ui <- fluidPage(
           radioButtons(
             inputId = "GeneCorSelectOffline",
             label = h4("Select mode:"),
-            choices = list("Online" = "online", "Offline" = "offline")
+            choices = list("Online" = "online", "Offline" = "offline"),
+            selected = "offline"
+          )
+        )
+      ),
+      fluidRow(
+        column(
+          12,
+          radioButtons(
+            inputId = "selectFolder_genecor",
+            label = h4("Select Folder"),
+            choices = list("ExpressionAnalysis" = "ExpressionAnalysis", "totalRNA" = "totalRNA","AGRF_trial" = "AGRF_trial" )
           )
         )
       ),
@@ -531,11 +598,28 @@ server <- function(input, output, session) {
   shinyjs::disable("SigPlotSelectOffline")
   shinyjs::disable("VioPlotSelectOffline")
   
+  # Hide offline buttons
+  shinyjs::hide("selectOffline")
+  shinyjs::hide("Select_plotfile_dot")
+  shinyjs::hide("tSNEselectOffline")
+  shinyjs::hide("SigPlotSelectOffline")
+  shinyjs::hide("VioPlotSelectOffline")
+  shinyjs::hide("GeneCorSelectOffline")
+  
+  # Hide folder selection buttons
+  shinyjs::hide("selectFolder_tableView")
+  shinyjs::hide("selectFolder")
+  shinyjs::hide("selectFolder_tsne")
+  shinyjs::hide("selectFolder_sigplot")
+  shinyjs::hide("selectFolder_vioplot")
+  shinyjs::hide("selectFolder_genecor")
+
   # Import table view script
   source("scripts/tableView.R", local = T)
   
   # Import expression plot script
-  source("scripts/ExpressionPlot_shiny.R", local = T)
+  #source("scripts/ExpressionPlot_shiny.R", local = T)
+  source("scripts/ExpressionPlot_shiny_with_cat_1.R", local = T)
   
   # Import tSNE plot script
   source("scripts/tSNEPlot_shiny.R", local = T)

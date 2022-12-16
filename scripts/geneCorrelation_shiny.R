@@ -37,12 +37,27 @@ observeEvent(
 
 # Create widgets for selecting genes to correlate
 observeEvent(
-  c(input$GeneCorSelectOffline, input$GeneCorTPMCounts2),
+  c(input$GeneCorSelectOffline, input$selectFolder_genecor, input$GeneCorTPMCounts2),
   {
+    output$GeneCorPlot <- renderPlotly({NULL})
     if(input$GeneCorSelectOffline == "online"){
+      if(input$tSNEselectOffline == "online" & input$selectFolder_genecor == "ExpressionAnalysis"){
+         dirLoc<<-"R:/PM/Work_In_Progress/Molecular_Profiling/RNA_Seq/ExpressionAnalysis/"
+        #dirLoc<<-"R:/KCA/Projects/ZEROApp/updated_gene_expression/"
+      }
+      if(input$tSNEselectOffline == "online" & input$selectFolder_genecor == "totalRNA"){
+         dirLoc<<-"R:/PM/Work_In_Progress/Molecular_Profiling/RNA_Seq/totalRNA/"
+        #dirLoc<<-"R:/KCA/Projects/ZEROApp/totalRNA/"
+      }
+      if(input$tSNEselectOffline == "online" & input$selectFolder_genecor == "AGRF_trial"){
+         dirLoc<<-"R:/PM/Work_In_Progress/Molecular_Profiling/RNA_Seq/AGRF_Trial/"
+        #dirLoc<<-"R:/KCA/Projects/ZeroApp_multiple/AGRF/"
+      }
       tryCatch(
         expr = {
-          tpm_table <<- read.delim(paste(dirLoc, "GeneExpression_TPM_Counts.txt", sep = ""), sep = "\t", header = T, row.names = 1)
+          filename <- list.files(path = dirLoc, pattern = "^Gene[[:print:]]*TPM_Counts.txt$", full.names = T)
+          tpm_table <<- read.delim(filename, sep = "\t", header = T, row.names = 1)
+          colnames(tpm_table) <- gsub(pattern="\\.",replacement="-",colnames(tpm_table))
           geneList <- rownames(tpm_table)
         },
         error = function(e){
@@ -51,6 +66,7 @@ observeEvent(
         }
       )
     } else if (input$GeneCorSelectOffline == "offline"){
+      shinyjs::hide("selectFolder_genecor")
       inFile <- input[["GeneCorTPMCounts2"]]
       if(is.null(inFile)){
         return(NULL)
@@ -102,7 +118,11 @@ observeEvent(
     tryCatch(
       expr = {
         if(!is.null(input$GeneCorFirstGene) & !is.null(input$GeneCorSecondGene)){
-          modified_table <- tpm_table[,-which(colnames(tpm_table) %in% "transcript_id.s.")]
+          if("transcript_id.s." %in% colnames(tpm_table)){
+            modified_table <- tpm_table[,-which(colnames(tpm_table) %in% "transcript_id.s.")]
+          } else {
+            modified_table <- tpm_table
+          }
           tpm1 <- modified_table[which(rownames(modified_table) == input$GeneCorFirstGene),]
           tpm2 <- modified_table[which(rownames(modified_table) == input$GeneCorSecondGene),]
           tpm1[tpm1 == 0] <- 0.0001
@@ -110,12 +130,18 @@ observeEvent(
           tpm1 <- log(tpm1)
           tpm2 <- log(tpm2)
           
+          print(modified_table)
+          
+          print("test2")
+          
           tpm1 <- as.numeric(tpm1)
           tpm2 <- as.numeric(tpm2)
           
           correlation <- cor.test(tpm1, tpm2, method = input$GeneCorSelectMethod2)
           pval <- as.numeric(correlation$p.value)
           correlation_score <- as.numeric(correlation$estimate)
+          
+          print("test3")
           
           if(input$GeneCorSelectMethod2 == "pearson"){
             corMethod <- "Pearson's"
@@ -138,7 +164,7 @@ observeEvent(
             geom_smooth(inherit.aes = F, data = df, mapping = aes(x = tpm1, y = tpm2), method = "lm") +
             xlab(paste(input$GeneCorFirstGene, " log(TPM)", sep = "")) +
             ylab(paste(input$GeneCorSecondGene, " log(TPM)", sep = ""))
-          
+           
           # Create download handler
           output$GeneCorPlotDownload <- downloadHandler(
             filename = function(){paste(input$GeneCorFirstGene, "_", input$GeneCorSecondGene, "_correlation_plot.png", sep = "")},
